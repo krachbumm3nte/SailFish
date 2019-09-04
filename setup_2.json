@@ -1,0 +1,25 @@
+{
+  "image_dir" : "/home/johannes/Desktop/billfish/plots/",
+  "temp_dir" : "/home/johannes/Desktop/billfish/plots/temp/",
+  "start_index" : 0,
+  "end_index" : 1100,
+  "rescaling_factor" : 1,
+  "chunking" : true,
+  "chunksize" : 200,
+  "processes" :
+    [
+
+      {
+        "type" : "ConnectedThresholding",
+        "lower" : 20,
+        "upper" : 60,
+        "replacevalue" : 1,
+        "seeds":
+        [
+          [500, 500, 50],
+          [1024, 480, 50]
+        ],
+        "save_flag" : false
+      }
+    ]
+}

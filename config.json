@@ -1,0 +1,13 @@
+{
+  "process" : {
+    "type" : [
+      {
+        "name" : "smooting_gaussian",
+        "type" : "gaussian",
+        "sigma" : 0.3
+      },
+        ]
+      }
+    ]
+  }
+}
