@@ -1,18 +1,16 @@
 import ct_scan
 import sys
 
+import io_utils
 import logger
 import utils
 import SimpleITK as sitk
-import tkinter_utils
 import json
 import settings
-
-
+from process_handler import ProcessHandler
 
 if __name__ == "__main__":
     args = sys.argv[1:]
-    tkinter_utils.tk_init("foo")
 
 
     with open(args[0]) as json_file:
@@ -20,20 +18,26 @@ if __name__ == "__main__":
         settings.init(configuration)
 
 
-    process_list = utils.create_process_list_from_dict(configuration['processes'])
+    if 'noconfirm' in args:
+        settings.noconfirm = True
+        logger.log_info('noconfirm argument read, skipping all user input queries')
+
+    input_dir = ct_scan.CtScan.default_path
+    logger.log_info(f'no input path specified, using default path at: {input_dir}')
+
+
+    handler = ProcessHandler(configuration['processes'])
     logger.log_successful("input file validation")
 
-    tkinter_utils.tk_init("foo")
     if not settings.is_chunking:
         logger.log_timestamp(
             'loading dataset from {} to {}, scaling down by a factor of {}...'.format(settings.start, settings.end, settings.rescaling_factor))
 
-        scan = ct_scan.CtScan(settings.start, settings.end, rescaling_factor=settings.rescaling_factor)
-        length, height, width = scan.data.shape
+        scan = ct_scan.CtScan(settings.start, settings.end, rescaling_factor=settings.rescaling_factor, path=input_dir)
         image = sitk.GetImageFromArray(scan.data)
         logger.log_completed("Image loading")
-        image = utils.execute_process_list(process_list, image)
-
+        image = handler.execute_process_list(image)
+        io_utils.write_to_file(image)
 
     else:
         chunks = utils.define_chunks(settings.start, settings.end, settings.chunksize)
@@ -41,13 +45,18 @@ if __name__ == "__main__":
 
         for i in range(len(chunks)):
             chunk = chunks[i]
+            settings.current_chunk = (i, chunk[0], chunk[1])
             logger.log_started(f"loading chunk from index {chunk[0]} to {chunk[1]}")
-            scan = ct_scan.CtScan(chunk[0], chunk[1], settings.rescaling_factor)
-            image = sitk.GetImageFromArray(scan.data)
-            image = utils.execute_process_list(process_list, image, True)
+            image = io_utils.load_from_file(input_dir, chunk[0], chunk[1])
+            logger.log_info(f"processing image of size {image.GetSize()}")
+            image = handler.execute_process_list(image, True)
             logger.log_completed(f"processing chunk from index {chunk[0]} to {chunk[1]}")
-            utils.write_to_temp(sitk.GetImageFromArray(sitk.GetArrayFromImage(image)[0:-1]), f"chunk_{str(i).zfill(3)}")
+            if i != len(chunks) - 1:
+                print('shortening by 1')
+                image = image[:, :, 0:-1]
+            io_utils.write_to_file(image, f"{settings.file_name}_{str(i).zfill(3)}", True)
 
-    utils.ask_save_image(image)
-    utils.show_3D_image(image)
+        image = io_utils.reassemble_chunks()
+
+    io_utils.show_3D_image(image)
 

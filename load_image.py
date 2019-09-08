@@ -1,5 +1,6 @@
 import sys
-from utils import *
+
+from io_utils import show_3D_image
 import SimpleITK as sitk
 import h5py
 

@@ -1,4 +1,6 @@
 import sys
+
+import io_utils
 import logger
 import utils
 import SimpleITK as sitk
@@ -12,18 +14,20 @@ class Process:
     to add a process, simply create a class in this file that inherits its functionality from this class.
     """
 
-    def __init__(self, description):
-        # override this if custom attributes are required
+    def __init__(self, description, chunking_optimized=True):
         self.description = description  # TODO: remove this?
         self.name = self.retreive_attribute('type')
         self.save_to_disk = self.retreive_attribute('save_flag', False)
         self.input = self.retreive_attribute('input', -1)
+        self.chunking_optimized = chunking_optimized
 
 
     def execute(self, input_image, enable_chunking=False):
         # TODO: chunking aus settings abfragen, statt parameter durchzureichen
         logger.log_started(self.name)
         if enable_chunking:
+            if not self.chunking_optimized:
+                logger.log_warning(f"{self.name} is not optimized for chunking, image faults may occur")
             result = self.calculate_chunk(input_image)
         else:
             result = self.calculate(input_image)
@@ -76,7 +80,7 @@ class ConnectedThresholding(Process):
         self.seeds = utils.parse_seeds(self.retreive_attribute('seeds'), settings.rescaling_factor)
         self.lower = self.retreive_attribute('lower')
         self.upper = self.retreive_attribute('upper')
-        self.replacevalue = self.retreive_attribute('replacevalue')
+        self.replacevalue = self.retreive_attribute('replacevalue', 1)
 
     def calculate(self, input_image):
         return sitk.ConnectedThreshold(image1=input_image,
@@ -162,18 +166,97 @@ class InvertIntensity(Process):
         super().__init__(description)
 
     def calculate(self, input_image):
-        return sitk.InvertIntensity(input_image)
+        return sitk.InvertIntensity(sitk.RescaleIntensity(input_image))
 
     def calculate_chunk(self, input_image):
         logger.log_warning("Inversion is not optimized for chunking, image faults may occur")
         return self.calculate(input_image)
 
-"""
-class Process(Process):
+
+class MaskImage(Process):
 
     def __init__(self, description):
         super().__init__(description)
+        self.mask_location = self.retreive_attribute('mask_location')
+        self.mask_downscale = self.retreive_attribute('mask_downscale', 1)
 
     def calculate(self, input_image):
-        pass
+        start_index, end_index = settings.current_chunk[1:]
+        mask = io_utils.load_from_file(self.mask_location, start_index, end_index)
+        print(mask.GetSize(), mask.GetPixelIDTypeAsString())
+        print(input_image.GetSize(), input_image.GetPixelIDTypeAsString())
+        return sitk.Mask(input_image, mask)
+
+    def calculate_chunk(self, input_image):
+        return self.calculate(input_image)
+
+
+class BinaryErosion(Process):
+
+    def __init__(self, description):
+        super().__init__(description)
+        self.radius = self.retreive_attribute('radius')
+
+    def calculate(self, input_image):
+        return sitk.BinaryErode(input_image, self.radius)
+
+
+class BinaryDilation(Process):
+
+    def __init__(self, description):
+        super().__init__(description)
+        self.radius = self.retreive_attribute('radius'
+                                              '')
+
+    def calculate(self, input_image):
+        return sitk.BinaryDilate(input_image, self.radius)
+
+
+class MeanFilter(Process):
+
+    def __init__(self, description):
+        super().__init__(description)
+        self.radius = self.retreive_attribute('radius')
+
+    def calculate(self, input_image):
+        image_filter = sitk.MeanImageFilter()
+        image_filter.SetRadius(int(self.radius))
+        return image_filter.Execute(input_image)
+
+      
+class ReassembleChunks(Process):
+
+  def __init__(self, description):
+      super().__init__(description)
+
+  def calculate(self, input_image):
+      pass
+      """
+      
+      class Process(Process):
+
+  def __init__(self, description):
+      super().__init__(description)
+
+  def calculate(self, input_image):
+      pass
+      
+      
+      
+      class Process(Process):
+
+  def __init__(self, description):
+      super().__init__(description)
+
+  def calculate(self, input_image):
+      pass
+      
+      
+      class Process(Process):
+
+  def __init__(self, description):
+      super().__init__(description)
+
+  def calculate(self, input_image):
+      pass
 """

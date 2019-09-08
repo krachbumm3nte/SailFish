@@ -8,14 +8,15 @@ def init(configuration_dict):
     global configuration
     configuration = configuration_dict
 
+    global file_name
+    file_name = retrieve_attribute('file_name', datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+
     global imgdir
     imgdir = retrieve_attribute('image_dir', os.path.curdir)
 
     global tempdir
     tempdir = retrieve_attribute('temp_dir', imgdir + 'temp/')
 
-    global FILE_ENDING
-    FILE_ENDING = retrieve_attribute('file_ending', '.hdf5')
 
     global rescaling_factor
     rescaling_factor = retrieve_attribute('rescaling_factor', 1)
@@ -32,11 +33,25 @@ def init(configuration_dict):
     global chunksize
     chunksize = retrieve_attribute('chunksize', 500)
 
-    global start_time
-    start_time = time.time()
+    global skip_confirm
+    skip_confirm = retrieve_attribute('no_confirm', False)
 
-    global file_identifier
-    file_identifier = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    # immutable global variables
+
+    global noconfirm
+    noconfirm = False
+
+    global start_time
+    start_time = time.time()  # set calculation start time for
+
+
+    global FILE_ENDING
+    FILE_ENDING = '.hdf5'
+
+    # temporary global variables
+
+    global current_chunk
+    current_chunk = (0,0,0)
 
 
 def retrieve_attribute(key, default=None):

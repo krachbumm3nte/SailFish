@@ -1,27 +1,40 @@
 {
   "image_dir" : "/home/johannes/Desktop/billfish/plots/",
   "temp_dir" : "/home/johannes/Desktop/billfish/plots/temp/",
-  "start_index" : 3000,
-  "end_index" : 4500,
-  "rescaling_factor" : 2,
+  "output_name" : "mask_0-1200",
+  "start_index" : 0,
+  "end_index" : 1200,
+  "rescaling_factor" : 1,
+  "chunking" : true,
+  "chunksize" : 400,
   "processes" :
-          [
-            {
-              "type" : "SmoothingGaussianFilter",
-              "sigma" : 0.3,
-              "save_flag" : false
-            },
-            {
-              "type" : "ConnectedThresholding",
-              "lower" : 20,
-              "upper" : 42,
-              "replacevalue" : 1,
-              "seeds":
-              [
-                [456, 424, 0],
-                [930, 426, 0]
-              ],
-              "save_flag" : false
-            }
-          ]
+    [
+
+      {
+        "type" : "SliceWiseMasking_2",
+        "lower" : 0,
+        "upper" : 40,
+        "replacevalue" : 1,
+        "save_flag" : false
+      },
+      {
+        "type" : "MeanFilter",
+        "radius" : 10
+      },
+      {
+        "type" : "BinaryDilation",
+        "radius" : 40
+      },
+      {
+        "type" : "InvertIntensity"
+      },
+      {
+        "type" : "MeanFilter",
+        "radius" : 7
+      },
+      {
+        "type" : "BinaryErosion",
+        "radius" : 15
+      }
+    ]
 }

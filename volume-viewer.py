@@ -22,7 +22,7 @@ if __name__ == '__main__':
     data_start = 0
     data_length = 500
 
-    archive = 'res/SFA3.original.4v0.hdf5'
+    archive = '/home/johannes/Desktop/billfish//SFA3.original.4v0.hdf5'
     print('archive = {0}'.format(archive))
     with h5py.File(archive, 'r') as f:
         original_dset = f['original']

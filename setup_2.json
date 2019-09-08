@@ -1,18 +1,19 @@
 {
   "image_dir" : "/home/johannes/Desktop/billfish/plots/",
   "temp_dir" : "/home/johannes/Desktop/billfish/plots/temp/",
+  "output_name" : "masked_image",
   "start_index" : 0,
-  "end_index" : 1100,
+  "end_index" : 1199,
   "rescaling_factor" : 1,
   "chunking" : true,
-  "chunksize" : 200,
+  "chunksize" : 400,
   "processes" :
     [
 
       {
         "type" : "ConnectedThresholding",
-        "lower" : 20,
-        "upper" : 60,
+        "lower" : 10,
+        "upper" : 45,
         "replacevalue" : 1,
         "seeds":
         [
@@ -20,6 +21,11 @@
           [1024, 480, 50]
         ],
         "save_flag" : false
+      },
+      {
+        "type" : "MaskImage",
+        "mask_location" : "/home/johannes/Desktop/billfish/plots/2019-09-08_22-34-39.hdf5",
+        "mask_downscale" : 2
       }
     ]
 }
