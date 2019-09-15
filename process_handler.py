@@ -30,6 +30,7 @@ class ProcessHandler:
         return instance
 
     def set_indices(self, start, end, input_location):
+        # TODO: This method is fucked
         self.current_indices = (start, end)
         with h5py.File(input_location, 'r') as infile:
             data = None

@@ -17,14 +17,14 @@
         "replacevalue" : 1,
         "seeds":
         [
-          [500, 500, 50],
-          [1024, 480, 50]
+          [497, 446, 0],
+          [936, 426, 50]
         ],
         "save_flag" : false
       },
       {
         "type" : "MaskImage",
-        "mask_location" : "/home/johannes/Desktop/billfish/plots/mask_front.hdf5"
+        "mask_location" : "/home/johannes/Desktop/billfish/plots/mask_rostral.hdf5"
       }
     ]
 }
