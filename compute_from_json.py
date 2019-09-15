@@ -4,10 +4,23 @@ import sys
 import io_utils
 import logger
 import utils
-import SimpleITK as sitk
 import json
 import settings
 from process_handler import ProcessHandler
+
+
+
+
+def retrieve_attribute(key, default=None):
+    if key in configuration.keys():
+        return configuration[key]
+    elif default is not None:
+        print(f"{key} \twas not defined in the input file, applying default value: {default}")
+        return default
+    else:
+        print(f'Error during input file reading: required attribute not found ({key})')
+        sys.exit()
+
 
 if __name__ == "__main__":
     args = sys.argv[1:]
@@ -22,41 +35,47 @@ if __name__ == "__main__":
         settings.noconfirm = True
         logger.log_info('noconfirm argument read, skipping all user input queries')
 
-    input_dir = ct_scan.CtScan.default_path
-    logger.log_info(f'no input path specified, using default path at: {input_dir}')
+    input_dir = retrieve_attribute('input_dir', ct_scan.CtScan.default_path)
 
 
-    handler = ProcessHandler(configuration['processes'])
+    rescaling_factor = retrieve_attribute('rescaling_factor', 1)
+
+    start_index = configuration['start_index']
+
+    end_index = configuration['end_index']
+    file_name = retrieve_attribute('file_name', 'visualization')
+    temp_name = "{}_{{}}.hdf5".format(retrieve_attribute('temp_dir') + file_name)
+    out_name = io_utils.define_out_name(retrieve_attribute('image_dir'), file_name)
+
+    handler = ProcessHandler(configuration['processes'], rescaling_factor)
     logger.log_successful("input file validation")
 
-    if not settings.is_chunking:
-        logger.log_timestamp(
-            'loading dataset from {} to {}, scaling down by a factor of {}...'.format(settings.start, settings.end, settings.rescaling_factor))
 
-        scan = ct_scan.CtScan(settings.start, settings.end, rescaling_factor=settings.rescaling_factor, path=input_dir)
-        image = sitk.GetImageFromArray(scan.data)
+    if not retrieve_attribute('chunking', True):
+        handler.set_indices(start_index, end_index, input_dir)
+        logger.log_timestamp('loading dataset from {} to {}, scaling down by a factor of {}...'
+                             .format(start_index, end_index, rescaling_factor))
+
+        image = io_utils.load_from_file(input_dir, rescaling_factor, start_index, end_index)
         logger.log_completed("Image loading")
         image = handler.execute_process_list(image)
-        io_utils.write_to_file(image)
+        io_utils.write_to_file(image, out_name, configuration)
 
     else:
-        chunks = utils.define_chunks(settings.start, settings.end, settings.chunksize)
+        chunks = utils.define_chunks(start_index, end_index, retrieve_attribute('chunksize', 500))
         logger.log_timestamp(f"chunk generation complete, {len(chunks)} chunks defined.")
 
         for i in range(len(chunks)):
             chunk = chunks[i]
-            settings.current_chunk = (i, chunk[0], chunk[1])
+            handler.set_indices(chunk[0], chunk[1], input_dir)
+            print(f"current indices: {handler.current_indices}")
             logger.log_started(f"loading chunk from index {chunk[0]} to {chunk[1]}")
-            image = io_utils.load_from_file(input_dir, chunk[0], chunk[1])
-            logger.log_info(f"processing image of size {image.GetSize()}")
+            image = io_utils.load_from_file(input_dir, rescaling_factor, chunk[0], chunk[1])
             image = handler.execute_process_list(image, True)
             logger.log_completed(f"processing chunk from index {chunk[0]} to {chunk[1]}")
-            if i != len(chunks) - 1:
-                print('shortening by 1')
-                image = image[:, :, 0:-1]
-            io_utils.write_to_file(image, f"{settings.file_name}_{str(i).zfill(3)}", True)
+            io_utils.write_to_file(image, temp_name.format(str(i).zfill(3)), configuration)
 
-        image = io_utils.reassemble_chunks()
 
-    io_utils.show_3D_image(image)
+        image = io_utils.reassemble_chunks(temp_name.format('*'), out_name, configuration)
 
+    # io_utils.show_3D_image(image)

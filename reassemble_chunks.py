@@ -16,17 +16,9 @@ if __name__ == "__main__":
         configuration = json.load(json_file)
         settings.init(configuration)
 
-    result = None
-    print(settings.tempdir)
-    print(sorted(os.listdir(settings.tempdir)))
-    for file in sorted(os.listdir(settings.tempdir)):
-        logger.log_timestamp(f"processing: {file}")
-        image = sitk.ReadImage(settings.tempdir + file)
-        print(image.GetSize())
-        if result is None:
-            result = sitk.GetArrayFromImage(image)
-        else:
-            result = np.concatenate((result, sitk.GetArrayFromImage(image)), axis=0)
+    out_name = configuration['file_name']
+    temp_name = "{}_*.hdf5".format(configuration['temp_dir'] + out_name)
 
-    io_utils.write_to_file(sitk.GetImageFromArray(result))
-    io_utils.show_3D_image(sitk.GetImageFromArray(result))
+    image = io_utils.reassemble_chunks(temp_name, out_name, configuration)
+
+    # io_utils.show_3D_image(sitk.GetImageFromArray(result))

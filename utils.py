@@ -43,9 +43,10 @@ def parse_seeds(seeds, scale):
 
 def define_chunks(start, end, chunksize):
     # TODO: proper handling of rescaling
+
     result = []
     for i in range(start, end, chunksize):
-        last_index = i + chunksize + 1
+        last_index = i + chunksize
         if last_index > end:
             result.append((i, end))
         else:

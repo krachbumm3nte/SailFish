@@ -3,9 +3,9 @@
   "temp_dir" : "/home/johannes/Desktop/billfish/plots/temp/",
   "start_index" : 0,
   "end_index" : 200,
-  "rescaling_factor" : 2,
+  "rescaling_factor" : 1,
   "chunking" : true,
-  "chunksize" : 70,
+  "chunksize" : 100,
   "processes" :
           [
 

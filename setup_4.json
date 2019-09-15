@@ -1,9 +1,9 @@
 {
   "image_dir" : "/home/johannes/Desktop/billfish/plots/",
   "temp_dir" : "/home/johannes/Desktop/billfish/plots/temp/",
-  "file_name" : "visualization",
-  "start_index" : 2400,
-  "end_index" : 4900,
+  "output_name" : "thresholding",
+  "start_index" : 0,
+  "end_index" : 400,
   "rescaling_factor" : 1,
   "chunking" : true,
   "chunksize" : 400,
@@ -21,10 +21,6 @@
           [1024, 480, 50]
         ],
         "save_flag" : false
-      },
-      {
-        "type" : "MaskImage",
-        "mask_location" : "/home/johannes/Desktop/billfish/plots/mask_front.hdf5"
       }
     ]
 }

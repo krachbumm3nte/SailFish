@@ -1,4 +1,6 @@
+import glob
 import subprocess
+import sys
 from datetime import datetime
 from pathlib import Path
 import utils
@@ -7,6 +9,7 @@ import h5py
 import numpy as np
 import vtk
 import os
+import re
 from PIL import ImageFont, Image, ImageDraw
 
 import settings
@@ -16,62 +19,24 @@ import logger
 valid_dataset_identifiers = ['data', 'original']
 
 
-def write_array_to_file(out_array, name=None, temp=False):
+def write_array_to_file(out_array, output_directory, meta):
     """
     writes an itk image object to a given directory
     """
-
-    if not name:
-        name=settings.file_name
-
-    folder = settings.tempdir if temp else settings.imgdir
-
-    output_directory = "{}{}{}".format(folder, name, settings.FILE_ENDING)
-    if os.path.isfile(output_directory):
-        logger.log_info('output file already exists, adding unique identifier...')
-        unique = datetime.now().strftime("_%Y-%m-%d_%H-%M-%S")
-        output_directory = "{}{}{}{}".format(folder, name, unique, settings.FILE_ENDING)
-
-    logger.log_timestamp(f"writing image to file: {output_directory}...")
+    logger.log_timestamp(f"writing image of size {out_array.shape} to file: {output_directory}...")
 
     with h5py.File(output_directory, 'w') as outfile:
         outfile.create_dataset('data', shape=out_array.shape, data=out_array)
         meta_grp = outfile.create_group('meta')
-        for k, v in settings.configuration.items():
+        for k, v in meta.items():
             if k == 'processes':
                 v = str(v)
             meta_grp.attrs[k] = v
     logger.log_completed("image saving")
 
 
-def write_to_file(image, name=None, temp=False):
-    write_array_to_file(sitk.GetArrayFromImage(image), name, temp)
-
-
-def save_selection_to_gif(gif_name, start=0, end=10, gif_delay=20, interval=1):
-    # TODO: update method head to accept array
-    print(f'constructing gif: {gif_name}.gif')
-    scan = CtScan(start, end)
-    font = ImageFont.truetype(font='usr/share/fonts/TTF/LiberationMono-Bold.ttf', size=35)
-
-    print('generating subimages...')
-    for i in range(0, end - start, interval):
-        img = Image.fromarray(scan.data[i])
-        draw = ImageDraw.Draw(img)
-        draw.text((0, 0), str(start + i), 255, font=font)
-        draw = ImageDraw.Draw(img)
-        img.save(f"{settings.tempdir}{start + i}.png")
-
-    print("collecting images to gif...")
-    bash_command = f"convert -delay {gif_delay} {settings.tempdir}*.png {settings.imgdir}{gif_name}.gif"
-    process = subprocess.Popen(bash_command.split(), stdout=subprocess.PIPE)
-    output, error = process.communicate()
-
-    # delete obsolete images
-    print("deleting obsolete images...")
-    for p in Path(settings.tempdir).glob("*.png"):
-        p.unlink()
-    print('done.')
+def write_to_file(image, output_directory, meta):
+    write_array_to_file(sitk.GetArrayFromImage(image), output_directory, meta)
 
 
 def show_3D_image(image):
@@ -100,7 +65,7 @@ def show_3D_image(image):
     elif data_type == '16-bit unsigned integer':
         importer.SetDataScalarTypeToShort()
     else:
-        print(f"unsupported data type ({data_type}), exiting!")
+        print(f"unsupported data type ({data_type}) for image display, exiting!")
         exit(0)
 
     importer.SetNumberOfScalarComponents(1)
@@ -138,9 +103,8 @@ def show_3D_image(image):
     interactor.Start()
 
 
-def load_array_from_file(filename, start_index=0, end_index=-1):
+def load_array_from_file(filename, rescaling_factor=1, start_index=0, end_index=None):
     logger.log_info(f'loading image data at index {start_index} to {end_index} from file: {filename}')
-    rescaling_factor = settings.rescaling_factor
     with h5py.File(filename, 'r') as infile:
         data = None
         for identifier in valid_dataset_identifiers:
@@ -149,34 +113,61 @@ def load_array_from_file(filename, start_index=0, end_index=-1):
                 break
         if not data:
             logger.log_error(f'unable to extract data from input file: {filename}')
-        if 'rescaling_factor' in infile['meta'].attrs.keys():
-            rescaling_factor = infile['meta'].attrs['rescaling_factor']
-        image = data[start_index:end_index:rescaling_factor, ::rescaling_factor, ::rescaling_factor]
+
+        print(data.dtype)
+        original_shape = ((end_index if end_index is not None else data.shape[0]) - start_index, data.shape[1], data.shape[2])
+        print(original_shape)
+        if rescaling_factor != 1:
+            image = data[start_index:end_index:rescaling_factor, ::rescaling_factor, ::rescaling_factor]
+            print("rescaling input")
+            print(image.shape)
+        else:
+            image = data[start_index:end_index]
         logger.log_info(f"finished loading from file. resulting image size: {image.shape}")
     return image
 
 
-def load_from_file(filename, start_index=0, end_index=-1):
-    return sitk.GetImageFromArray(load_array_from_file(filename, start_index, end_index))
+def load_from_file(filename, scale, start_index=0, end_index=None):
+    return sitk.GetImageFromArray(load_array_from_file(filename, scale, start_index, end_index))
 
 
-def ask_save_image(image):
-    if utils.askyesno("Save this visualization on your disk?", True):
-        write_to_file(image)
+def reassemble_chunks(temp_regex, out_name, meta):
+    logger.log_info(f"beginning chunk reassembly from {temp_regex}")
 
+    images = sorted(glob.iglob(temp_regex))
+    if len(images) == 0:
+        logger.log_error("no temporary files detected")
+    result = assemble_images(images)
+    write_to_file(sitk.GetImageFromArray(result), out_name, meta)
 
-def reassemble_chunks():
-    logger.log_info(f"beginning chunk reassembly from {settings.tempdir}")
-    result = None
-    print(sorted(os.listdir(settings.tempdir)))
-    for file in sorted(os.listdir(settings.tempdir)):
-        logger.log_timestamp(f"processing: {file}")
-        current_chunk_data = load_array_from_file(settings.tempdir + file)
-        print(current_chunk_data.shape)
-        if result is None:
-            result = current_chunk_data
-        else:
-            result = np.concatenate((result, current_chunk_data), axis=0)
-    write_to_file(sitk.GetImageFromArray(result))
+    if utils.askyesno("delete temporary files?", True):
+        for file in images:
+            logger.log_info(f"deleting: {file}")
+            os.unlink(file)
+
     return sitk.GetImageFromArray(result)
 
+
+def assemble_images(image_locations):
+    result = None
+    for location in image_locations:
+        logger.log_timestamp(f"processing: {location}")
+        current_image_data = load_array_from_file(location)
+        print(current_image_data.shape)
+        if result is None:
+            result = current_image_data
+        else:
+            result = np.concatenate((result, current_image_data), axis=0)
+
+    logger.log_info(f"Assembly finished, resulting size: {result.shape}")
+    return result
+
+
+def define_out_name(directory, name):
+
+    output_directory = "{}{}.hdf5".format(directory, name)
+    if os.path.isfile(output_directory):
+        logger.log_info('output file already exists, adding unique identifier...')
+        unique = datetime.now().strftime("_%Y-%m-%d_%H-%M-%S")
+        output_directory = "{}{}{}.hdf5".format(directory, name, unique)
+    return output_directory

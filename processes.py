@@ -1,11 +1,12 @@
 import sys
-
 import io_utils
 import logger
+import process_handler
 import utils
 import SimpleITK as sitk
 import settings
 import numpy as np
+import io_utils
 
 
 class Process:
@@ -18,12 +19,13 @@ class Process:
         self.description = description  # TODO: remove this?
         self.name = self.retreive_attribute('type')
         self.save_to_disk = self.retreive_attribute('save_flag', False)
-        self.input = self.retreive_attribute('input', -1)
         self.chunking_optimized = chunking_optimized
+        self.handler: process_handler.ProcessHandler = None
 
+    def set_handler(self, handler):
+        self.handler = handler
 
     def execute(self, input_image, enable_chunking=False):
-        # TODO: chunking aus settings abfragen, statt parameter durchzureichen
         logger.log_started(self.name)
         if enable_chunking:
             if not self.chunking_optimized:
@@ -91,8 +93,12 @@ class ConnectedThresholding(Process):
 
     def calculate_chunk(self, input_image):
         result = self.calculate(input_image)
-        last_slice = sitk.GetArrayFromImage(result)[-1]
-        self.update_seeds(last_slice)
+
+        # dilate last slice of current image by one pixel to ensure proper continuation on the next chunk
+        last_slice = sitk.BinaryDilate(result[:, :, -1], 1)
+
+        self.update_seeds(sitk.GetArrayFromImage(last_slice))
+
         return result
 
     def update_seeds(self, array):
@@ -181,8 +187,8 @@ class MaskImage(Process):
         self.mask_downscale = self.retreive_attribute('mask_downscale', 1)
 
     def calculate(self, input_image):
-        start_index, end_index = settings.current_chunk[1:]
-        mask = io_utils.load_from_file(self.mask_location, start_index, end_index)
+        start_index, end_index = self.handler.current_indices
+        mask = io_utils.load_from_file(self.mask_location, 1, start_index-2400, end_index-2400)
         print(mask.GetSize(), mask.GetPixelIDTypeAsString())
         print(input_image.GetSize(), input_image.GetPixelIDTypeAsString())
         return sitk.Mask(input_image, mask)
@@ -231,26 +237,64 @@ class ReassembleChunks(Process):
 
   def calculate(self, input_image):
       pass
-      """
-      
-      class Process(Process):
 
-  def __init__(self, description):
-      super().__init__(description)
+      
+class OtsuThresholding(Process):
 
-  def calculate(self, input_image):
-      pass
-      
-      
-      
-      class Process(Process):
+    def calculate(self, input_image):
+        return sitk.OtsuThreshold(input_image)
 
-  def __init__(self, description):
-      super().__init__(description)
 
-  def calculate(self, input_image):
-      pass
-      
+class RescaleToOriginal(Process):
+
+    def calculate(self, input_image):
+        return self.rescale(input_image, self.handler.current_shape_unscaled)
+
+    def calculate_chunk(self, input_image):
+        in_shape = self.handler.current_shape_unscaled
+        curr_chunk = self.handler.current_indices
+        target_shape = (curr_chunk[1]-curr_chunk[0], in_shape[1], in_shape[2])
+        return self.rescale(input_image, target_shape)
+
+
+    def rescale(self, input_image, target_shape):
+        logger.log_info(f"rescaling to target shape {target_shape}")
+        in_array = sitk.GetArrayFromImage(input_image)
+        rescaling_factor = self.handler.rescaling_factor
+        rescale_volume = (rescaling_factor, rescaling_factor, rescaling_factor)
+        print(f"applying kronecker product with shape: {rescale_volume}")
+        out_array = np.kron(in_array, np.ones(rescale_volume, in_array.dtype))
+
+        for i in range(3):
+            if out_array.shape[i] < target_shape[i]:
+                logger.log_error("invalid rescaling factor: output dimension is smaller than target dimension")
+        print(out_array.shape)
+        out_array = out_array[0:target_shape[0], 0:target_shape[1], 0:target_shape[2]]
+        out_image = sitk.GetImageFromArray(out_array)
+        print(in_array.shape, out_array.shape)
+        return out_image
+
+
+
+class AppendImages(Process):
+
+    def __init__(self, description):
+        super().__init__(description)
+        self.image_locations = self.retreive_attribute("images")
+
+    def calculate(self, input_image):
+        result = sitk.GetArrayFromImage(input_image)
+        for location in self.image_locations:
+            logger.log_timestamp(f"processing: {location}")
+            current_image_data = io_utils.load_array_from_file(location)
+            print(current_image_data.shape)
+            result = np.concatenate((result, current_image_data), axis=0)
+
+        logger.log_info(f"Assembly finished, resulting size: {result.shape}")
+        return sitk.GetImageFromArray(result)
+
+"""
+
       
       class Process(Process):
 

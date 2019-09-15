@@ -1,0 +1,18 @@
+{
+  "image_dir" : "/home/johannes/Desktop/billfish/plots/",
+  "temp_dir" : "/home/johannes/Desktop/billfish/plots/temp/",
+  "output_name" : "masked_image",
+  "input_file" : "/home/johannes/Desktop/billfish/plots/2019-09-13_04-16-12.hdf5",
+  "start_index" : 0,
+  "end_index" : 400,
+  "rescaling_factor" : 1,
+  "chunking" : true,
+  "chunksize" : 400,
+  "processes" :
+    [
+      {
+        "type" : "MaskImage",
+        "mask_location" : "/home/johannes/Desktop/billfish/plots/mask_2019-09-13_04-29-10.hdf5"
+      }
+    ]
+}

@@ -1,0 +1,28 @@
+{
+  "image_dir" : "/home/johannes/Desktop/billfish/plots/",
+  "temp_dir" : "/home/johannes/Desktop/billfish/plots/temp/",
+  "file_name" : "mask",
+  "start_index" : 0,
+  "end_index" : 100,
+  "rescaling_factor" : 1,
+  "chunking" : true,
+  "chunksize" : 100,
+  "processes" :
+          [
+
+            {
+              "type" : "MeanFilter",
+              "radius" : 19
+            },
+            {
+              "type" : "OtsuThresholding"
+            },
+            {
+              "type" : "InvertIntensity"
+            },
+            {
+              "type" : "BinaryErosion",
+              "radius" : 20
+            }
+          ]
+}

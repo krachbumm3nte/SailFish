@@ -21,17 +21,10 @@ def init(configuration_dict):
     global rescaling_factor
     rescaling_factor = retrieve_attribute('rescaling_factor', 1)
 
-    global start
-    start = retrieve_attribute('start_index')
-
-    global end
-    end = retrieve_attribute('end_index')
 
     global is_chunking
     is_chunking = retrieve_attribute('chunking', False)
 
-    global chunksize
-    chunksize = retrieve_attribute('chunksize', 500)
 
     global skip_confirm
     skip_confirm = retrieve_attribute('no_confirm', False)
@@ -51,7 +44,10 @@ def init(configuration_dict):
     # temporary global variables
 
     global current_chunk
-    current_chunk = (0,0,0)
+    current_chunk = (0, 0, 0)
+
+    global input_shape
+    input_shape = (0, 0, 0)
 
 
 def retrieve_attribute(key, default=None):

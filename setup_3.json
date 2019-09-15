@@ -1,12 +1,12 @@
 {
   "image_dir" : "/home/johannes/Desktop/billfish/plots/",
   "temp_dir" : "/home/johannes/Desktop/billfish/plots/temp/",
-  "file_name" : "visualization",
-  "start_index" : 2400,
-  "end_index" : 4900,
-  "rescaling_factor" : 1,
-  "chunking" : true,
-  "chunksize" : 400,
+  "output_name" : "masked_image",
+  "start_index" : 0,
+  "end_index" : 100,
+  "rescaling_factor" : 8,
+  "chunking" : false,
+  "chunksize" : 40,
   "processes" :
     [
 
@@ -23,8 +23,7 @@
         "save_flag" : false
       },
       {
-        "type" : "MaskImage",
-        "mask_location" : "/home/johannes/Desktop/billfish/plots/mask_front.hdf5"
+        "type" : "RescaleToOriginal"
       }
     ]
 }
