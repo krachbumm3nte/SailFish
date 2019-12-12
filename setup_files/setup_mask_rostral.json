@@ -1,0 +1,30 @@
+{
+  "image_dir" : "./plots/",
+  "temp_dir" : "./temp/",
+  "file_name" : "mask_rostral",
+  "start_index" : 2500,
+  "rescaling_factor" : 8,
+  "chunking" : true,
+  "chunksize" : 900,
+
+  "processes" :
+          [
+            {
+              "type" : "MeanFilter",
+              "radius" : 10
+            },
+            {
+              "type" : "OtsuThresholding"
+            },
+            {
+              "type" : "BinaryDilation",
+              "radius" : 8
+            },
+            {
+              "type" : "InvertIntensity"
+            },
+            {
+              "type" : "RescaleToOriginal"
+            }
+          ]
+}

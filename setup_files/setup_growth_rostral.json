@@ -1,0 +1,31 @@
+{
+  "image_dir" : "./plots/",
+  "temp_dir" : "./temp/",
+  "file_name" : "growth_rostral",
+  "start_index" : 2500,
+  "rescaling_factor" : 1,
+  "chunking" : true,
+  "chunksize" : 800,
+  "processes" :
+    [
+      {
+        "type" : "MaskImage",
+        "mask_location" : "./plots/mask_rostral.hdf5",
+        "offset" : 2500
+      },
+      {
+        "type" : "ConnectedThresholding",
+        "lower" : 7,
+        "upper" : 45,
+        "seeds":
+        [
+          [497, 446, 0],
+          [490, 446, 0],
+          [480, 446, 0],
+          [936, 426, 0],
+          [381, 571, 0],
+          [1054, 613, 0]
+        ]
+      }
+    ]
+}

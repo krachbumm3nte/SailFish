@@ -1,0 +1,25 @@
+{
+  "input_dir" : "./SFA3.original.4v0.hdf5",
+  "image_dir" : "./plots/",
+  "temp_dir" : "./temp/",
+  "file_name" : "masked_thresholding",
+  "end_index" : 2500,
+  "chunking" : true,
+  "chunksize" : 500,
+  "processes" :
+    [
+      {
+        "type" : "SmoothingGaussianFilter",
+        "sigma" : 1.7
+      },
+      {
+        "type" : "Thresholding",
+        "lower" : 7,
+        "upper" : 45
+      },
+      {
+        "type" : "MaskImage",
+        "mask_location" : "./plots/mask_caudal.hdf5"
+      }
+    ]
+}

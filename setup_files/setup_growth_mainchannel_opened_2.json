@@ -1,0 +1,49 @@
+{
+  "image_dir" : "./plots/",
+  "temp_dir" : "./temp/",
+  "file_name" : "growth_mainchannel_opened",
+  "start_index" : 2500,
+  "end_index" : 4979,
+  "rescaling_factor" : 1,
+  "chunking" : true,
+  "chunksize" : 900,
+  "processes" :
+    [
+      {
+        "type" : "MaskImage",
+        "mask_location" : "./mask_rostral.hdf5",
+        "offset" : 2500
+      },
+      {
+        "type" : "SmoothingGaussianFilter",
+        "sigma" : 4
+      },
+      {
+        "type" : "ConnectedThresholding",
+        "lower" : 15,
+        "upper" : 45,
+        "replacevalue" : 1,
+        "seeds":
+        [
+          [497, 446, 0],
+          [500, 535, 10],
+
+          [927, 418, 0],
+
+          [381, 568, 0],
+
+          [1048, 619, 0]
+
+        ],
+        "save_flag" : false
+      },
+      {
+        "type" : "BinaryErosion",
+        "radius" : 15
+      },
+      {
+        "type" : "BinaryDilation",
+        "radius" : 15
+      }
+    ]
+}

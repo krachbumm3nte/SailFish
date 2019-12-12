@@ -1,0 +1,31 @@
+{
+  "input_dir" : "./SFA3.original.4v0.hdf5",
+  "image_dir" : "./plots/",
+  "temp_dir" : "./temp/",
+  "file_name" : "mask_caudal",
+  "start_index" : 0,
+  "end_index" : 2500,
+  "rescaling_factor" : 8,
+  "chunking" : false,
+  "chunksize" : 800,
+  "processes" :
+          [
+            {
+              "type" : "MeanFilter",
+              "radius" : 10
+            },
+            {
+              "type" : "OtsuThresholding"
+            },
+            {
+              "type" : "BinaryDilation",
+              "radius" : 12
+            },
+            {
+              "type" : "InvertIntensity"
+            },
+            {
+              "type" : "RescaleToOriginal"
+            }
+          ]
+}
