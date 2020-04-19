@@ -1,5 +1,4 @@
 import os
-import sys
 import json
 import argparse
 
@@ -29,13 +28,15 @@ class JsonInterpreter:
         start_index, end_index (int, optional): the range of the input file (before scaling) to be computed.
             Defaults to None (loading the entire dataset).
         handler (ProcessHandler): creates and manages the pipeline of processes to be applied to the input image
-        chunking (bool, optional): if True, the the Dataset is read in chunks. Every chunk will be transformed
+        chunking (bool, optional): if True, the the dataset is read in chunks. Every chunk will be transformed
             according to the instructions and saved to disk for later reassembly. Defaults to True.
-        chunks (list(tuple), optional): the indices describing all chunks (befor scaling) to be computed
+        chunks (list(tuple), optional): the indices describing all chunks (before scaling) to be computed
     """
     def __init__(self):
         parser = argparse.ArgumentParser(description='performs computations defined in an input file.')
-        parser.add_argument('configuration', help='a valid .json file that contains computation instructions')
+
+        parser.add_argument('configuration', help='the directory of a valid .json file that contains '
+                                                  'computation instructions')
 
         parser.add_argument('-nc', '--noconfirm', action='store_true',
                             help='skips all user input queries and performs their default action')
@@ -44,7 +45,7 @@ class JsonInterpreter:
                             help='Calculation output will not be displayed')
 
         parser.add_argument('-ns', '--nosave', action='store_true',
-                            help='Calculation output will not be saved to disk')
+                            help='Calculation output will not be saved to disc')
 
         self.args = parser.parse_args()
 
@@ -54,6 +55,7 @@ class JsonInterpreter:
         with open(self.args.configuration) as json_file:
             self.configuration = json.load(json_file)
 
+        # retrieve all parameters needed for the computation from the input file and save them to class variables
         self.input_dir = self.get_attr_by_name('input_dir')
         self.file_identifier = self.get_attr_by_name('file_name', 'result')
         self.output_name = self.io_handler.define_out_name(self.get_attr_by_name('image_dir'), self.file_identifier)
@@ -72,7 +74,6 @@ class JsonInterpreter:
         self.logger.log_successful("input file validation")
 
     def execute(self):
-
         if len(self.handler.processes) == 0:
             self.logger.log_timestamp('No image Operations defined. Displaying unedited input image.')
             self.io_handler.show_3D_array(self.io_handler.load_array_from_file(self.input_dir, self.rescaling_factor,
@@ -115,6 +116,14 @@ class JsonInterpreter:
                 self.io_handler.show_3D_array(working_array)
 
     def get_attr_by_name(self, key, default=None):
+        """
+        retrieves an attribute from the input configuration file or applies a specified default value, if the attribute
+        is not found in the input file. if no key exists and no default is specified, throws an exception and aborts
+        the computation.
+        :param key: the name of the attribute to be retrieved from the config file
+        :param default: optional default value that will be applied, if the key is not found in the config file
+        :return: the value belonging to the specified key, or the default value
+        """
         if key in self.configuration.keys():
             return self.configuration[key]
 
@@ -123,10 +132,16 @@ class JsonInterpreter:
             return default
 
         self.logger.log_error(f'Error during input file reading: required attribute not found ({key})')
-        sys.exit()
 
 
 def define_chunks(start, end, chunksize):
+    """
+    define start and end indexes of chunks of a given size between two integers
+    :param start: the starting point along the x-axis of the dataset to be chunked
+    :param end: the end point along the x-axis of the dataset to be chunked
+    :param chunksize: the desired size of chunks produced within the range
+    :return: an array of tuples containing start and end indices of every chunk
+    """
     result = []
     for i in range(start, end, chunksize):
         last_index = i + chunksize

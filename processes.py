@@ -34,6 +34,13 @@ class Process:
         self.logger = logger
 
     def execute(self, input_image, enable_chunking=False):
+        """
+        applies the functionality of this process to a given input image, returning the result of the computation
+        :param input_image: the image to be processed
+        :param enable_chunking: if true, a different method of computation will be used, interpreting the input as
+        part of a greater image
+        :return: an image of the same dimensions as the input
+        """
         self.logger.log_started(self.name)
         if enable_chunking:
             if not self.chunking_optimized:
@@ -49,9 +56,20 @@ class Process:
         return result
 
     def calculate(self, input_image):
+        """
+        processes an image according to a given image manipulation
+        :param input_image: the image to be processed
+        :return: a processed image of the same dimension
+        """
         return input_image
 
     def calculate_chunk(self, input_image):
+        """
+        processes a chunk of a full image according to a given image manipulation. Does not need to be overridden if
+        the computation for a chunk equals that for the entire image.
+        :param input_image: the image to be processed
+        :return: a processed image of the same dimension
+        """
         return self.calculate(input_image)
 
     def get_attr_by_name(self, attr_name, default=None):
@@ -71,7 +89,12 @@ class Process:
             sys.exit()
 
 
-# begin defining custom processes from here
+"""
+
+begin defining custom processes from here
+
+"""
+
 
 class SmoothingGaussianFilter(Process):
 
@@ -165,7 +188,7 @@ class MaskImage(Process):
 class BinaryErosion(Process):
 
     def __init__(self, description):
-        super().__init__(description)
+        super().__init__(description, False)
         self.radius = self.get_attr_by_name('radius')
 
     def calculate(self, input_image):
@@ -179,7 +202,7 @@ class BinaryErosion(Process):
 class BinaryDilation(Process):
 
     def __init__(self, description):
-        super().__init__(description)
+        super().__init__(description, False)
         self.radius = self.get_attr_by_name('radius')
 
     def calculate(self, input_image):
@@ -203,6 +226,10 @@ class MeanFilter(Process):
 
 
 class OtsuThresholding(Process):
+
+    def __init__(self, description):
+        super().__init__(description, False)
+
     def calculate(self, input_image):
         return sitk.OtsuThreshold(input_image)
 

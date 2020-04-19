@@ -49,6 +49,11 @@ class ProcessHandler:
         return sitk.GetArrayFromImage(image)
 
     def create_process_from_dict(self, process_dict):
+        """
+        Creates an object of the type Process from a dict of attributes
+        :param process_dict: the dict to be encrypted
+        :return: an object of type Process
+        """
         if 'type' not in process_dict.keys():
             self.logger.log_error("process type not specified! validate process definition.")
         process_class = getattr(processes, process_dict['type'])

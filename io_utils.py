@@ -124,15 +124,15 @@ class IOHandler:
         interactor.Start()
 
     def load_array_from_file(self, filename, rescaling_factor, start_index=0, end_index=None):
-        '''
+        """
         returns a numpy.ndarray that represents a file given by directory
         :param filename: the directory to be read from
         :param rescaling_factor: the amount of downscaling to be applied to the original image (taking every n-th
             value along all axes
         :param start_index: start index of the image segment to be read
-        :param end_index: end index of the image semgent to be read
+        :param end_index: end index of the image segment to be read
         :return: numpy array representing the image segment
-        '''
+        """
         self.logger.log_timestamp(f'loading image data at index {start_index} to {end_index} from file: {filename}')
         with h5py.File(filename, 'r') as infile:
             data = None

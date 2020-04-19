@@ -1,7 +1,7 @@
 {
-  "input_dir" : "./SFA3.original.4v0.hdf5",
-  "image_dir" : "./plots/",
-  "temp_dir" : "./temp/",
+  "input_dir" : "/home/johannes/Desktop/billfish/SFA3.original.4v0.hdf5",
+  "image_dir" : "/home/johannes/Desktop/billfish/plots/",
+  "temp_dir" : "/home/johannes/Desktop/billfish/temp/",
   "file_name" : "mask_caudal",
   "start_index" : 0,
   "end_index" : 2500,
@@ -19,7 +19,7 @@
             },
             {
               "type" : "BinaryDilation",
-              "radius" : 12
+              "radius" : 14
             },
             {
               "type" : "InvertIntensity"

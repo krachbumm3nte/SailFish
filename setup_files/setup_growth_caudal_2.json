@@ -1,0 +1,29 @@
+{
+  "input_dir" : "/home/johannes/Desktop/billfish/SFA3.original.4v0.hdf5",
+  "image_dir" : "./plots/",
+  "temp_dir" : "./temp/",
+  "file_name" : "growth_caudal",
+  "start_index" : 0,
+  "end_index" : 2500,
+  "rescaling_factor" : 1,
+  "chunking" : true,
+  "chunksize" : 800,
+  "processes" :
+    [
+      {
+        "type" : "MaskImage",
+        "mask_location" : "/home/johannes/Desktop/billfish/plots/mask_rostral.hdf5"
+      },
+      {
+        "type" : "ConnectedThresholding",
+        "lower" : 7,
+        "upper" : 45,
+        "seeds":
+        [
+          [497, 446, 0],
+          [936, 426, 50],
+          [1140, 641, 0]
+        ]
+      }
+    ]
+}
