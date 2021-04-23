@@ -98,7 +98,7 @@ pip=19.2.2=py36_0
 prometheus_client=0.7.1=py_0
 prompt_toolkit=2.0.9=py36_0
 ptyprocess=0.6.0=py36_0
-pygments=2.4.2=py_0
+pygments=2.7.2=py_0
 pyparsing=2.4.2=py_0
 pyqt=5.9.2=py36h05f1152_2
 pyrsistent=0.14.11=py36h7b6447c_0
