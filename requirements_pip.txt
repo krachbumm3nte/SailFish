@@ -1,5 +1,5 @@
 matplotlib==3.1.1
-vtk==8.1.1
+vtk==9.0.1
 numpy==1.22.0
 SimpleITK==1.2.2
 h5py==2.8.0
